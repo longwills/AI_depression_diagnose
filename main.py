@@ -52,7 +52,7 @@ def read_sample(Reference):
         print("preparing: ", session)
         if int(session) > 500:
             break
-        if int(session) == 396 or int(session) == 432:  #problematic session
+        if int(session) == 396 or int(session) == 432 or int(session) == 367:  #problematic session
             continue
         label = float(patient[1])
         label = torch.DoubleTensor([label])

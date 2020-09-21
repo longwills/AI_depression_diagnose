@@ -196,22 +196,22 @@ class CFNN(nn.Module):
         x1 = self.conv_unit_vision(x1)
         x1 = torch.transpose(x1, 1, 2)
         length = x1.size(1)
-        x1 = x1[: ,length//2, :]
-        #x1 = torch.sum(x1, 1).squeeze(1)/length
+        #x1 = x1[: ,length//2, :]
+        x1 = torch.sum(x1, 1).squeeze(1)/length
         
         x2 = torch.transpose(x2, 1, 2)
         x2 = self.conv_unit_voice(x2)
         x2 = torch.transpose(x2, 1, 2)
         length = x2.size(1)
-        x2 = x2[: ,length//2, :]
-        #x2 = torch.sum(x2, 1).squeeze(1)/length
+        #x2 = x2[: ,length//2, :]
+        x2 = torch.sum(x2, 1).squeeze(1)/length
 
         x3 = torch.transpose(x3, 1, 2)
         x3 = self.conv_unit_transcript(x3)
         x3 = torch.transpose(x3, 1, 2)
         length = x3.size(1)
-        x3 = x3[: ,length//2, :]
-        #x3 = torch.sum(x3, 1).squeeze(1)/length
+        #x3 = x3[: ,length//2, :]
+        x3 = torch.sum(x3, 1).squeeze(1)/length
         
         
         #print(x1.shape, x2.shape, x3.shape)
