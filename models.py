@@ -41,78 +41,95 @@ class CFNN(nn.Module):
        
         self.conv_unit_vision = nn.Sequential(
             CausalConv1d(204 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=2),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=4),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=8),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=16),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=32),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
-            nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=64),
-            nn.ReLU(),
-            #nn.Dropout(0.1),
-
-
-            
+            nn.Dropout(0.5),  
         )
         
         self.conv_unit_voice = nn.Sequential(
             CausalConv1d(80 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=2),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=4),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=8),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=16),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=32),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=64),
-            nn.ReLU(),
-            #nn.Dropout(0.1),
-
         )        
 
         self.conv_unit_transcript = nn.Sequential(
             CausalConv1d(300 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=2),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=2),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=2),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=4),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=2),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=8),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=2),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=16),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=2),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=32),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=2),
             nn.ReLU(),
             nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=64),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=2),
             nn.ReLU(),
-            #nn.Dropout(0.1),
+            nn.Dropout(0.5),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=2),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.AvgPool1d(4, stride=2),
+            nn.ReLU(),
+            nn.Dropout(0.5),
         ) 
 
         self.conv_unit = nn.Sequential(
@@ -153,31 +170,22 @@ class CFNN(nn.Module):
         # flatten
         # fully connected (fc) unit
         self.fc_unit = nn.Sequential(
-            nn.Linear(3*128, 256),
+            nn.Linear(3*128, 1024),
             nn.ReLU(),
             nn.Dropout(0.1),
-            nn.Linear(256, 512),
+            nn.Linear(1024, 1024),
             nn.ReLU(),
             nn.Dropout(0.1),
-            nn.Linear(512, 1024),
+            nn.Linear(1024, 1024),
             nn.ReLU(),
             nn.Dropout(0.1),
-            nn.Linear(1024, 2048),
+            nn.Linear(1024, 1024),
             nn.ReLU(),
             nn.Dropout(0.1),
-            nn.Linear(2048, 4096),
+            nn.Linear(1024, 1024),
             nn.ReLU(),
             nn.Dropout(0.1),
-            #nn.Linear(4096, 2048),
-            #nn.ReLU(),
-            #nn.Dropout(0.1),
-            #nn.Linear(2048, 1024),
-            #nn.ReLU(),
-            #nn.Dropout(0.1),
-            #nn.Linear(1024, 512),
-            #nn.ReLU(),
-            #nn.Dropout(0.1),
-            nn.Linear(4096, 1)
+            nn.Linear(1024, 1)
         )
         
 
@@ -239,7 +247,8 @@ class CFNN(nn.Module):
         v2 = torch.squeeze(torch.transpose(v2, 1, 2), 1)
         v3 = torch.squeeze(torch.transpose(v3, 1, 2), 1)
 
-        x = torch.cat([v1, v2, v3], dim=1)
+        #x = torch.cat([v1, v2, v3], dim=1)
+        x = torch.cat([z1, z2], dim=1)
 
         logits = self.fc_unit(x)
 

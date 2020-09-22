@@ -115,9 +115,9 @@ def prepare_sample():
     V_tensor = torch.cat([V3D_x_tensor, V3D_y_tensor, V3D_z_tensor], dim=2)
 
     #segment sequence to make it shorter (to be optimized)
-    V_tensor = V_tensor[:,0:5000,:]
-    A_tensor = A_tensor[:,0:5000,:]
-    L_tensor = L_tensor[:,0:500,:]
+    V_tensor = V_tensor[:,0:4096,:]
+    A_tensor = A_tensor[:,0:4096,:]
+    L_tensor = L_tensor[:,0:512,:]
 
     print("V_tensor: ", V_tensor)
     print("A_tensor: ", A_tensor)
