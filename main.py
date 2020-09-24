@@ -51,7 +51,7 @@ def read_sample(Reference):
     for patient in Reference:
         session = patient[0]
         print("preparing: ", session)
-        if int(session) > 500:
+        if int(session) > 310:
             break
         if int(session) == 396 or int(session) == 432 or int(session) == 367:  #problematic session
             continue
@@ -63,6 +63,12 @@ def read_sample(Reference):
         A = audioLoader.process_audio(session)
         L = transcriptLoader.process_transcript(session)
         masksA, masksV = maskLoader.process_mask(session)
+        print(A.shape, V[0].shape, L.shape)
+
+        #average video and audio frames within each sentence
+        V = torch.matmul(masksV.T, V[0]), torch.matmul(masksV.T, V[1]), torch.matmul(masksV.T, V[2]), torch.matmul(masksV.T, V[3]), torch.matmul(masksV.T, V[4])
+        A = torch.matmul(masksA.T, A)
+        print(A.shape, V[0].shape, L.shape)
 
         V2D_x_list.append(V[0])
         V2D_y_list.append(V[1])
@@ -73,7 +79,7 @@ def read_sample(Reference):
         L_list.append(L)
  
 
-    return (label_list, V2D_x_list, V2D_y_list, V3D_x_list, V3D_y_list, V3D_z_list, A_list, L_list)
+    return (label_list, V2D_x_list, V2D_y_list, V3D_x_list, V3D_y_list, V3D_z_list, A_list, L_list, masksA, masksV)
 
 def prepare_sample():
 
@@ -94,8 +100,10 @@ def prepare_sample():
     V3D_z_list = daic_train[5] + daic_test[5]
     A_list = daic_train[6] + daic_test[6]
     L_list = daic_train[7] + daic_test[7]
+    masksA = daic_train[8] + daic_test[8]
+    masksV = daic_train[9] + daic_test[9]
 
-    #normalize features
+    #normalize features (before padding)
     V2D_x_list = normalize_tensors(V2D_x_list)
     V2D_y_list = normalize_tensors(V2D_y_list)
     V3D_x_list = normalize_tensors(V3D_x_list)
