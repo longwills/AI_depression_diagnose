@@ -40,8 +40,8 @@ def process_mask(session):
             masksV.append((timesV>startStamps[j])* (timesV<endStamps[j]))
         masksA = torch.stack(masksA).double()
         masksV = torch.stack(masksV).double()
-        masksA = masksA.T/torch.sum(masksA, 1)
-        masksV = masksV.T/torch.sum(masksV, 1)
+        masksA = masksA.T/(torch.sum(masksA, 1)+0.01) #avoid nan
+        masksV = masksV.T/(torch.sum(masksV, 1)+0.01)
         torch.save(masksA, '/mnt/sdc1/daicwoz/'+session+'_P/'+session+'_masksA.pt')
         torch.save(masksV, '/mnt/sdc1/daicwoz/'+session+'_P/'+session+'_masksV.pt') 
     else:

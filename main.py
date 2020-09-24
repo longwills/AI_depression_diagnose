@@ -40,46 +40,43 @@ def pad_pack(x, x_len):
 def read_sample(Reference):
 
     label_list = []
-    V2D_x_list = []
-    V2D_y_list = []
-    V3D_x_list = []
-    V3D_y_list = []
-    V3D_z_list = []
-    A_list = []
-    L_list = []
+    features_list = []
+    #V_list = []
+    #A_list = []
+    #L_list = []
    
     for patient in Reference:
         session = patient[0]
         print("preparing: ", session)
-        if int(session) > 310:
+        if int(session) > 500:
             break
         if int(session) == 396 or int(session) == 432 or int(session) == 367:  #problematic session
+            continue
+        if int(session) == 420 or int(session) == 434 or int(session) == 402:  #needs investigation
             continue
         label = float(patient[1])
         label = torch.DoubleTensor([label])
         label_list.append(label)
 
         V = videoLoader.process_video(session)
+        V = torch.cat([V[2], V[3], V[4]], dim=1) #combine 3-d video features
         A = audioLoader.process_audio(session)
         L = transcriptLoader.process_transcript(session)
         masksA, masksV = maskLoader.process_mask(session)
-        print(A.shape, V[0].shape, L.shape)
-
+        #print(torch.sum(masksA), torch.sum(masksV))
+        
         #average video and audio frames within each sentence
-        V = torch.matmul(masksV.T, V[0]), torch.matmul(masksV.T, V[1]), torch.matmul(masksV.T, V[2]), torch.matmul(masksV.T, V[3]), torch.matmul(masksV.T, V[4])
+        V = torch.matmul(masksV.T, V)
         A = torch.matmul(masksA.T, A)
-        print(A.shape, V[0].shape, L.shape)
-
-        V2D_x_list.append(V[0])
-        V2D_y_list.append(V[1])
-        V3D_x_list.append(V[2])
-        V3D_y_list.append(V[3])
-        V3D_z_list.append(V[4])
-        A_list.append(A)
-        L_list.append(L)
+        
+        features = torch.cat([V, A, L], dim=1) #combine all features
+        features_list.append(features)
+        #V_list.append(V)
+        #A_list.append(A)
+        #L_list.append(L)
  
 
-    return (label_list, V2D_x_list, V2D_y_list, V3D_x_list, V3D_y_list, V3D_z_list, A_list, L_list, masksA, masksV)
+    return (label_list, features_list)
 
 def prepare_sample():
 
@@ -93,51 +90,25 @@ def prepare_sample():
     testLen = len(daic_test[0])
     
     label_list = daic_train[0] + daic_test[0]
-    V2D_x_list = daic_train[1] + daic_test[1]
-    V2D_y_list = daic_train[2] + daic_test[2]
-    V3D_x_list = daic_train[3] + daic_test[3]
-    V3D_y_list = daic_train[4] + daic_test[4]
-    V3D_z_list = daic_train[5] + daic_test[5]
-    A_list = daic_train[6] + daic_test[6]
-    L_list = daic_train[7] + daic_test[7]
-    masksA = daic_train[8] + daic_test[8]
-    masksV = daic_train[9] + daic_test[9]
+    features_list = daic_train[1] + daic_test[1]
 
     #normalize features (before padding)
-    V2D_x_list = normalize_tensors(V2D_x_list)
-    V2D_y_list = normalize_tensors(V2D_y_list)
-    V3D_x_list = normalize_tensors(V3D_x_list)
-    V3D_y_list = normalize_tensors(V3D_y_list)
-    V3D_z_list = normalize_tensors(V3D_z_list)
-    A_list = normalize_tensors(A_list)
-    L_list = normalize_tensors(L_list)
+    features_list = normalize_tensors(features_list)
 
     #pad sequences of patients to make them have same length
-    V2D_x_tensor = torch.nn.utils.rnn.pad_sequence(V2D_x_list, batch_first=True )
-    V2D_y_tensor = torch.nn.utils.rnn.pad_sequence(V2D_y_list, batch_first=True )
-    V3D_x_tensor = torch.nn.utils.rnn.pad_sequence(V3D_x_list, batch_first=True )
-    V3D_y_tensor = torch.nn.utils.rnn.pad_sequence(V3D_y_list, batch_first=True )
-    V3D_z_tensor = torch.nn.utils.rnn.pad_sequence(V3D_z_list, batch_first=True )
-    A_tensor = torch.nn.utils.rnn.pad_sequence(A_list, batch_first=True )
-    L_tensor = torch.nn.utils.rnn.pad_sequence(L_list, batch_first=True )
+    features_tensor = torch.nn.utils.rnn.pad_sequence(features_list, batch_first=True )
 
-    #combine dimensions into one vector for vision
-    V_tensor = torch.cat([V3D_x_tensor, V3D_y_tensor, V3D_z_tensor], dim=2)
+    #segment sequence to make it shorter
+    #features_tensor = features_tensor[:,0:100,:]
 
-    #segment sequence to make it shorter (to be optimized)
-    V_tensor = V_tensor[:,0:4096,:]
-    A_tensor = A_tensor[:,0:4096,:]
-    L_tensor = L_tensor[:,0:512,:]
+    print("features_tensor: ", features_tensor)
 
-    print("V_tensor: ", V_tensor)
-    print("A_tensor: ", A_tensor)
-    print("L_tensor: ", L_tensor)
     
     #make final output list
     sample = []   
     nPatient = len(label_list)
     for ip in range(0, nPatient):
-        pair = (V_tensor[ip], A_tensor[ip], L_tensor[ip], label_list[ip])
+        pair = (features_tensor[ip], label_list[ip])
         sample.append(pair)
     daic_train = sample[:trainLen]
     daic_test = sample[-testLen:]
@@ -160,8 +131,8 @@ def main():
     batchsz_test = 5    
     daic_train = DataLoader(daic_train, batch_size=batchsz_train, shuffle=True, drop_last=True)
     daic_test = DataLoader(daic_test, batch_size=batchsz_test, shuffle=True, drop_last=True)
-    V, A, L, label = iter(daic_train).next()
-    print('vision shape:', V.shape, 'voice shape:', A.shape, 'transcript:', L.shape, 'label:', label.shape)
+    features, label = iter(daic_train).next()
+    print('features shape:', features.shape, 'label:', label.shape)
 
     #initialize model
     device = torch.device('cuda')
@@ -173,12 +144,12 @@ def main():
     print(model)
 
     #training iteration
-    for epoch in range(500):
+    for epoch in range(200):
         model.train()
-        for batchidx, (V, A, L, label) in enumerate(daic_train):
-            V, A, L, label = V.to(device), A.to(device), L.to(device), label.to(device)
+        for batchidx, (features, label) in enumerate(daic_train):
+            features, label = features.to(device), label.to(device)
 
-            inputs = (batchsz_train, V, A, L)
+            inputs = (batchsz_train, features)
             label = torch.squeeze(label)
             logits = model(inputs)
             logits = torch.squeeze(logits)
@@ -202,10 +173,10 @@ def main():
             total_positive = 0
             total_true = 0
             total_true_positive = 0
-            for V, A, L, label in daic_test:
-                V, A, L, label = V.to(device), A.to(device), L.to(device), label.to(device)
+            for features, label in daic_test:
+                features, label = features.to(device), label.to(device)
 
-                inputs = (batchsz_test, V, A, L)
+                inputs = (batchsz_test, features)
                 label = torch.squeeze(label)               
                 logits = model(inputs)
                 logits = torch.squeeze(logits)
@@ -213,7 +184,7 @@ def main():
                 pred = sm(logits)
 
                 total_correct += torch.le(torch.abs(pred-label), 0.5).float().sum().item()
-                total_num += V.size(0)
+                total_num += features.size(0)
                 total_positive += torch.gt(pred, 0.5).float().sum().item()
                 total_true += torch.gt(label, 0.5).float().sum().item()
                 total_true_positive += (torch.gt(pred, 0.5) * torch.gt(label, 0.5)).float().sum().item()

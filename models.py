@@ -133,44 +133,37 @@ class CFNN(nn.Module):
         ) 
 
         self.conv_unit = nn.Sequential(
-            CausalConv1d(284 ,128, kernel_size=5, stride=1, dilation=1),
+            CausalConv1d(204+80+4096 ,128, kernel_size=5, stride=1, dilation=1),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.1),
             CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=2),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.1),
             CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=4),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.1),
             CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=8),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.1),
             CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=16),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.1),
             CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=32),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.1),
             CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=64),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.1),
             CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=128),
             nn.ReLU(),
-            nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=256),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=512),
-            nn.ReLU(),
-            #nn.Dropout(0.5),
- 
+            nn.Dropout(0.1), 
         ) 
 
 
         # flatten
         # fully connected (fc) unit
         self.fc_unit = nn.Sequential(
-            nn.Linear(3*128, 1024),
+            nn.Linear(128, 1024),
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(1024, 1024),
@@ -194,6 +187,7 @@ class CFNN(nn.Module):
 
     def forward(self, inputs):
         
+        '''
         somx = nn.Softmax(dim=1)
 
 
@@ -249,6 +243,18 @@ class CFNN(nn.Module):
 
         x = torch.cat([v1, v2, v3], dim=1)
         #x = torch.cat([z1, z2], dim=1)
+        '''
+
+
+        (batchsz, x) = inputs
+
+        x = torch.transpose(x, 1, 2)
+        x = self.conv_unit(x)
+        x = torch.transpose(x, 1, 2)
+        length = x.size(1)
+        #x = x1[: ,0, :]
+        x = torch.sum(x, 1).squeeze(1)/length
+        x = x.reshape(batchsz, 128)
 
         logits = self.fc_unit(x)
 
