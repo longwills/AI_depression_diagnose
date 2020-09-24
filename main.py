@@ -5,6 +5,7 @@ import nltk
 nltk.download('punkt')
 
 from torch.utils.data import DataLoader
+import maskLoader
 import audioLoader
 import videoLoader
 import transcriptLoader
@@ -61,6 +62,7 @@ def read_sample(Reference):
         V = videoLoader.process_video(session)
         A = audioLoader.process_audio(session)
         L = transcriptLoader.process_transcript(session)
+        masksA, masksV = maskLoader.process_mask(session)
 
         V2D_x_list.append(V[0])
         V2D_y_list.append(V[1])
@@ -146,7 +148,7 @@ def main():
     print('train length:', len(daic_train), 'test length:', len(daic_test))
 
     #make datasets with given batch size
-    batchsz_train = 8
+    batchsz_train = 16
     batchsz_test = 5    
     daic_train = DataLoader(daic_train, batch_size=batchsz_train, shuffle=True, drop_last=True)
     daic_test = DataLoader(daic_test, batch_size=batchsz_test, shuffle=True, drop_last=True)
@@ -163,7 +165,7 @@ def main():
     print(model)
 
     #training iteration
-    for epoch in range(400):
+    for epoch in range(500):
         model.train()
         for batchidx, (V, A, L, label) in enumerate(daic_train):
             V, A, L, label = V.to(device), A.to(device), L.to(device), label.to(device)

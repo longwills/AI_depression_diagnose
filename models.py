@@ -90,7 +90,7 @@ class CFNN(nn.Module):
             CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
             nn.AvgPool1d(4, stride=4),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            #nn.Dropout(0.5),
         )        
 
         self.conv_unit_transcript = nn.Sequential(
@@ -129,7 +129,7 @@ class CFNN(nn.Module):
             CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=1),
             nn.AvgPool1d(2, stride=2),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            #nn.Dropout(0.5),
         ) 
 
         self.conv_unit = nn.Sequential(
@@ -162,7 +162,7 @@ class CFNN(nn.Module):
             nn.Dropout(0.5),
             CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=512),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            #nn.Dropout(0.5),
  
         ) 
 
@@ -170,7 +170,7 @@ class CFNN(nn.Module):
         # flatten
         # fully connected (fc) unit
         self.fc_unit = nn.Sequential(
-            nn.Linear(2*128, 1024),
+            nn.Linear(3*128, 1024),
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(1024, 1024),
@@ -247,8 +247,8 @@ class CFNN(nn.Module):
         v2 = torch.squeeze(torch.transpose(v2, 1, 2), 1)
         v3 = torch.squeeze(torch.transpose(v3, 1, 2), 1)
 
-        #x = torch.cat([v1, v2, v3], dim=1)
-        x = torch.cat([z1, z2], dim=1)
+        x = torch.cat([v1, v2, v3], dim=1)
+        #x = torch.cat([z1, z2], dim=1)
 
         logits = self.fc_unit(x)
 
