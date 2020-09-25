@@ -9,6 +9,9 @@ import numpy as np
 import torch
 import os
 
+import matplotlib.pyplot as plt
+import maskLoader
+
 def load_2D(filename):
     lines = np.loadtxt(filename, comments="#", skiprows = (1), delimiter=",", unpack=False)
     lines = np.delete(lines, [0,1,2,3], axis=1)
@@ -57,8 +60,16 @@ def process_video(session):
     return tensor_V2D_x, tensor_V2D_y, tensor_V3D_x, tensor_V3D_y, tensor_V3D_z
 
 def main():
-    tensor_featuresCombined = process_video(300)
-    print("tensor: ", tensor_featuresCombined[0].shape, tensor_featuresCombined[1].shape, tensor_featuresCombined[2].shape, tensor_featuresCombined[3].shape, tensor_featuresCombined[4].shape)
+
+    V = process_video(300)
+    masksA, masksV = maskLoader.process_mask(300)
+    
+    plt.plot(V[2])
+    print("tensor: ", V[2].shape)
+
+    Vp = torch.matmul(masksV.T, V[2])
+    plt.plot(Vp)
+    print("tensor: ", Vp.shape)
 
 
 if __name__ == '__main__':

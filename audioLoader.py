@@ -4,6 +4,9 @@ import numpy as np
 import torch
 import os
 
+import matplotlib.pyplot as plt
+import maskLoader
+
 def process_audio(session):
 
     session = str(session)
@@ -24,9 +27,17 @@ def process_audio(session):
     return tensor_AU
 
 def main():
-    tensor_featuresCombined = process_audio(300)
-    print("tensor: ", tensor_featuresCombined.shape)
-    print("element: ", tensor_featuresCombined[3, 2])
+    A = process_audio(300)
+    masksA, masksV = maskLoader.process_mask(300)
+    
+    plt.plot(A)
+    print("tensor: ", A.shape)
+
+    A = torch.matmul(masksA.T, A)
+    plt.plot(A)
+    print("tensor: ", A.shape)
+
+
 
 
 if __name__ == '__main__':

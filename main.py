@@ -50,7 +50,7 @@ def read_sample(Reference):
     for patient in Reference:
         session = patient[0]
         print("preparing: ", session)
-        if int(session) > 310:
+        if int(session) > 500:
             break
         if int(session) == 396 or int(session) == 432 or int(session) == 367:  #problematic session
             continue
@@ -64,14 +64,15 @@ def read_sample(Reference):
         V = torch.cat([V[2], V[3], V[4]], dim=1) #combine 3-d video features
         A = audioLoader.process_audio(session)
         L = transcriptLoader.process_transcript(session)
+        L = L[:, 0:200]
         masksA, masksV = maskLoader.process_mask(session)
         #print(torch.sum(masksA), torch.sum(masksV))
-        plt.plot(A)
+        #plt.plot(A)
         
         #average video and audio frames within each sentence
         V = torch.matmul(masksV.T, V)
         A = torch.matmul(masksA.T, A)
-        plt.plot(A)
+        #plt.plot(A)
         
         features = torch.cat([V, A, L], dim=1) #combine all features
         features_list.append(features)
@@ -131,7 +132,7 @@ def main():
     print('train length:', len(daic_train), 'test length:', len(daic_test))
 
     #make datasets with given batch size
-    batchsz_train = 1
+    batchsz_train = 32
     batchsz_test = 5    
     daic_train = DataLoader(daic_train, batch_size=batchsz_train, shuffle=True, drop_last=True)
     daic_test = DataLoader(daic_test, batch_size=batchsz_test, shuffle=True, drop_last=True)
@@ -148,7 +149,7 @@ def main():
     print(model)
 
     #training iteration
-    for epoch in range(3):
+    for epoch in range(400):
         model.train()
         for batchidx, (features, label) in enumerate(daic_train):
             features, label = features.to(device), label.to(device)
