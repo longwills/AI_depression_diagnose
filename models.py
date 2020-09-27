@@ -159,11 +159,66 @@ class CFNN(nn.Module):
             #nn.Dropout(0.1), 
         ) 
 
+        self.conv_unit_video = nn.Sequential(
+            CausalConv1d(204 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=2),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=4),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=8),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=16),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=32),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=64),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=128),
+            nn.ReLU(),
+            #nn.Dropout(0.1), 
+        )
+
+        self.conv_unit_audio = nn.Sequential(
+            CausalConv1d(80 ,128, kernel_size=5, stride=1, dilation=1),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=2),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=4),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=8),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=16),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=32),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=64),
+            nn.ReLU(),
+            #nn.Dropout(0.1),
+            CausalConv1d(128 ,128, kernel_size=5, stride=1, dilation=128),
+            nn.ReLU(),
+            #nn.Dropout(0.1), 
+        )
+
+        self.lstm_unit_transcript = nn.LSTM(300, 64, 6, batch_first=True, bidirectional=True, dropout=0.1)       
 
         # flatten
         # fully connected (fc) unit
         self.fc_unit = nn.Sequential(
-            nn.Linear(128, 256),
+            nn.Linear(128*2, 256),
             nn.ReLU(),
             #nn.Dropout(0.1),
             nn.Linear(256, 512),
@@ -246,19 +301,40 @@ class CFNN(nn.Module):
         '''
 
 
-        (batchsz, x) = inputs
+        (batchsz, V, A, L) = inputs
 
-        x = torch.transpose(x, 1, 2)
-        xr = x
-        xr = torch.flip(xr, [2])
-        x = torch.cat([x,xr], 2)
-        x = self.conv_unit(x)
-        x = torch.transpose(x, 1, 2)
-        length = x.size(1)
-        x = x[: ,0, :]
+        V = torch.transpose(V, 1, 2)
+        Vr = V
+        Vr = torch.flip(Vr, [2])
+        V = torch.cat([V,Vr], 2)
+        V = self.conv_unit_video(V)
+        V = torch.transpose(V, 1, 2)
+        length = V.size(1)
+        V = V[: ,0, :]
         #x = torch.sum(x, 1).squeeze(1)/length
-        x = x.reshape(batchsz, 128)
+        V = V.reshape(batchsz, 128)
 
+        A = torch.transpose(A, 1, 2)
+        Ar = A
+        Ar = torch.flip(Ar, [2])
+        A = torch.cat([A,Ar], 2)
+        A = self.conv_unit_audio(A)
+        A = torch.transpose(A, 1, 2)
+        length = A.size(1)
+        A = A[: ,0, :]
+        #x = torch.sum(x, 1).squeeze(1)/length
+        A = A.reshape(batchsz, 128)
+
+        L = self.lstm_unit_transcript(L)[0]
+        L = L[: ,0, :]
+        length = L.size(1)
+        #x = torch.sum(x, 1).squeeze(1)/length
+        L = L.reshape(batchsz, 128)
+
+        z1 = torch.div(V+A+L, 3)
+        z2 = V*A*L
+
+        x = torch.cat([z1, z2], dim=1)
         logits = self.fc_unit(x)
 
         return logits

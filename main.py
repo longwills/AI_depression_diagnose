@@ -15,18 +15,20 @@ from models import CFNN
 
 import matplotlib.pyplot as plt
 
-def normalize_features(inputT):    
+def normalize_tensor(inputT):    
     mean = torch.mean(inputT)
     dev = torch.std(inputT)
     outputT = (inputT-mean)/dev
     return outputT
 
 def normalize_tensors(inputList):  
-    #normalize tensors in the list with the mean and deviation of the first element  
+    #normalize tensors in the list with the mean and deviation of the first element 
+    #print(inputList[0].shape) 
     mean = torch.mean(inputList[0])
     dev = torch.std(inputList[0])
     outputList = []
     for inputT in inputList:
+        #print(inputT.shape)
         outputT = (inputT-mean)/dev
         outputList.append(outputT)
     return outputList
@@ -42,10 +44,13 @@ def pad_pack(x, x_len):
 def read_sample(Reference):
 
     label_list = []
-    features_list = []
-    #V_list = []
-    #A_list = []
-    #L_list = []
+    V_list = []
+    A_list = []
+    L_list = []
+
+    V_map = dict()
+    A_map = dict()
+    L_map = dict()
    
     for patient in Reference:
         session = patient[0]
@@ -54,66 +59,64 @@ def read_sample(Reference):
             break
         if int(session) == 396 or int(session) == 432 or int(session) == 367:  #problematic session
             continue
-        if int(session) == 420 or int(session) == 434 or int(session) == 402:  #needs investigation
-            continue
+        #if int(session) == 420 or int(session) == 434 or int(session) == 402:  #needs investigation
+            #continue
         label = float(patient[1])
         label = torch.DoubleTensor([label])
         label_list.append(label)
 
-        V = videoLoader.process_video(session)
-        V = torch.cat([V[2], V[3], V[4]], dim=1) #combine 3-d video features
-        A = audioLoader.process_audio(session)
-        L = transcriptLoader.process_transcript(session)
-        L = L[:, 0:200]
-        masksA, masksV = maskLoader.process_mask(session)
-        #print(torch.sum(masksA), torch.sum(masksV))
-        #plt.plot(A)
+        V = videoLoader.process_video_segments(session)
+        A = audioLoader.process_audio_segments(session)
+        L = transcriptLoader.process_transcript_segments(session)
         
-        #average video and audio frames within each sentence
-        V = torch.matmul(masksV.T, V)
-        A = torch.matmul(masksA.T, A)
-        #plt.plot(A)
-        
-        features = torch.cat([V, A, L], dim=1) #combine all features
-        features_list.append(features)
-        #V_list.append(V)
-        #A_list.append(A)
-        #L_list.append(L)
+        V_list = V_list + V
+        A_list = A_list + A
+        L_list = L_list + L
+
+    print(len(V_list), len(A_list), len(L_list))
  
 
-    return (label_list, features_list)
+    return (label_list, V_list, A_list, L_list)
 
 def prepare_sample():
 
     #get meta information reference like train/test separation and labels
     trainRef, testRef = metaInfoLoader.extract_info()
  
-    #read input features and labels
+    #read input V, A, L and labels
     daic_train = read_sample(trainRef)
     daic_test = read_sample(testRef)
     trainLen = len(daic_train[0])
     testLen = len(daic_test[0])
     
     label_list = daic_train[0] + daic_test[0]
-    features_list = daic_train[1] + daic_test[1]
+    V_list = daic_train[1] + daic_test[1]
+    A_list = daic_train[2] + daic_test[2]
+    L_list = daic_train[3] + daic_test[3]
 
-    #normalize features (before padding)
-    features_list = normalize_tensors(features_list)
+    #normalize V, A, L (before padding)
+    V_list = normalize_tensors(V_list)
+    A_list = normalize_tensors(A_list)
+    L_list = normalize_tensors(L_list)
 
     #pad sequences of patients to make them have same length
-    features_tensor = torch.nn.utils.rnn.pad_sequence(features_list, batch_first=True )
+    V_tensor = torch.nn.utils.rnn.pad_sequence(V_list, batch_first=True )
+    A_tensor = torch.nn.utils.rnn.pad_sequence(A_list, batch_first=True )
+    L_tensor = torch.nn.utils.rnn.pad_sequence(L_list, batch_first=True )
+    print(V_tensor.shape)
+    print(A_tensor.shape)
+    print(L_tensor.shape)
 
     #segment sequence to make it shorter
-    #features_tensor = features_tensor[:,0:100,:]
-
-    print("features_tensor: ", features_tensor)
-
-    
+    V_tensor = V_tensor[:,0:500,:]
+    A_tensor = A_tensor[:,0:500,:]
+    L_tensor = L_tensor[:,0:10,:]
+   
     #make final output list
     sample = []   
     nPatient = len(label_list)
     for ip in range(0, nPatient):
-        pair = (features_tensor[ip], label_list[ip])
+        pair = (V_tensor[ip], A_tensor[ip], L_tensor[ip], label_list[ip])
         sample.append(pair)
     daic_train = sample[:trainLen]
     daic_test = sample[-testLen:]
@@ -127,7 +130,7 @@ def main():
     
     print("start running")
  
-    #read features from daicwoz dataset into lists
+    #read V, A, L from daicwoz dataset into lists
     daic_train, daic_test = prepare_sample()       
     print('train length:', len(daic_train), 'test length:', len(daic_test))
 
@@ -136,8 +139,8 @@ def main():
     batchsz_test = 5    
     daic_train = DataLoader(daic_train, batch_size=batchsz_train, shuffle=True, drop_last=True)
     daic_test = DataLoader(daic_test, batch_size=batchsz_test, shuffle=True, drop_last=True)
-    features, label = iter(daic_train).next()
-    print('features shape:', features.shape, 'label:', label.shape)
+    V, A, L, label = iter(daic_train).next()
+    print('V, A, L shape:', V.shape, A.shape, L.shape, 'label:', label.shape)
 
     #initialize model
     device = torch.device('cuda')
@@ -149,12 +152,12 @@ def main():
     print(model)
 
     #training iteration
-    for epoch in range(400):
+    for epoch in range(100):
         model.train()
-        for batchidx, (features, label) in enumerate(daic_train):
-            features, label = features.to(device), label.to(device)
+        for batchidx, (V, A, L, label) in enumerate(daic_train):
+            V, A, L, label = V.to(device), A.to(device), L.to(device), label.to(device)
 
-            inputs = (batchsz_train, features)
+            inputs = (batchsz_train, V, A, L)
             label = torch.squeeze(label)
             logits = model(inputs)
             logits = torch.squeeze(logits)
@@ -178,10 +181,10 @@ def main():
             total_positive = 0
             total_true = 0
             total_true_positive = 0
-            for features, label in daic_test:
-                features, label = features.to(device), label.to(device)
+            for V, A, L, label in daic_test:
+                V, A, L, label = V.to(device), A.to(device), L.to(device), label.to(device)
 
-                inputs = (batchsz_test, features)
+                inputs = (batchsz_test, V, A, L)
                 label = torch.squeeze(label)               
                 logits = model(inputs)
                 logits = torch.squeeze(logits)
@@ -189,7 +192,7 @@ def main():
                 pred = sm(logits)
 
                 total_correct += torch.le(torch.abs(pred-label), 0.5).float().sum().item()
-                total_num += features.size(0)
+                total_num += V.size(0)
                 total_positive += torch.gt(pred, 0.5).float().sum().item()
                 total_true += torch.gt(label, 0.5).float().sum().item()
                 total_true_positive += (torch.gt(pred, 0.5) * torch.gt(label, 0.5)).float().sum().item()
