@@ -59,21 +59,23 @@ def read_sample(Reference):
             break
         if int(session) == 396 or int(session) == 432 or int(session) == 367:  #problematic session
             continue
-        #if int(session) == 420 or int(session) == 434 or int(session) == 402:  #needs investigation
-            #continue
-        label = float(patient[1])
-        label = torch.DoubleTensor([label])
-        label_list.append(label)
 
         V = videoLoader.process_video_segments(session)
         A = audioLoader.process_audio_segments(session)
         L = transcriptLoader.process_transcript_segments(session)
         
+        label = float(patient[1])
+        label = torch.DoubleTensor([label])
+        label_sublist = [label]*len(L)
+
         V_list = V_list + V
         A_list = A_list + A
         L_list = L_list + L
+        label_list = label_list + label_sublist
 
-    print(len(V_list), len(A_list), len(L_list))
+        
+
+    print(len(label_list), len(V_list), len(A_list), len(L_list))
  
 
     return (label_list, V_list, A_list, L_list)
@@ -135,12 +137,12 @@ def main():
     print('train length:', len(daic_train), 'test length:', len(daic_test))
 
     #make datasets with given batch size
-    batchsz_train = 32
-    batchsz_test = 5    
+    batchsz_train = 128
+    batchsz_test = 128    
     daic_train = DataLoader(daic_train, batch_size=batchsz_train, shuffle=True, drop_last=True)
     daic_test = DataLoader(daic_test, batch_size=batchsz_test, shuffle=True, drop_last=True)
     V, A, L, label = iter(daic_train).next()
-    print('V, A, L shape:', V.shape, A.shape, L.shape, 'label:', label.shape)
+    #print('V, A, L shape:', V.shape, A.shape, L.shape, 'label:', label.shape)
 
     #initialize model
     device = torch.device('cuda')
@@ -148,11 +150,11 @@ def main():
     model = model.double()
     criteon = nn.BCEWithLogitsLoss().to(device)
     sm = nn.Sigmoid().to(device)
-    optimizer = optim.Adam(model.parameters(), lr=1e-5)
+    optimizer = optim.Adam(model.parameters(), lr=1e-4)
     print(model)
 
     #training iteration
-    for epoch in range(100):
+    for epoch in range(200):
         model.train()
         for batchidx, (V, A, L, label) in enumerate(daic_train):
             V, A, L, label = V.to(device), A.to(device), L.to(device), label.to(device)
