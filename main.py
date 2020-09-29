@@ -43,6 +43,7 @@ def pad_pack(x, x_len):
 
 def read_sample(Reference):
 
+    ID_list = []
     label_list = []
     V_list = []
     A_list = []
@@ -60,18 +61,25 @@ def read_sample(Reference):
         if int(session) == 396 or int(session) == 432 or int(session) == 367:  #problematic session
             continue
 
+        #read V, A, L features, synchronize and slice them for each sentence
         V = videoLoader.process_video_segments(session)
         A = audioLoader.process_audio_segments(session)
         L = transcriptLoader.process_transcript_segments(session)
         
+        #read and duplicate labels to match the size of sliced sequence
         label = float(patient[1])
         label = torch.DoubleTensor([label])
         label_sublist = [label]*len(L)
+
+        #record the ID to each slice
+        ID = int(session)
+        ID_sublist = [ID]*len(L)
 
         V_list = V_list + V
         A_list = A_list + A
         L_list = L_list + L
         label_list = label_list + label_sublist
+        ID_list = ID_list + ID_sublist
 
         
 
@@ -90,12 +98,12 @@ def prepare_sample():
     daic_test = read_sample(testRef)
     trainLen = len(daic_train[0])
     testLen = len(daic_test[0])
-    
+
     label_list = daic_train[0] + daic_test[0]
     V_list = daic_train[1] + daic_test[1]
     A_list = daic_train[2] + daic_test[2]
     L_list = daic_train[3] + daic_test[3]
-
+    
     #normalize V, A, L (before padding)
     V_list = normalize_tensors(V_list)
     A_list = normalize_tensors(A_list)
@@ -109,7 +117,7 @@ def prepare_sample():
     print(A_tensor.shape)
     print(L_tensor.shape)
 
-    #segment sequence to make it shorter
+    #segment sequence (avoid too long padding)
     V_tensor = V_tensor[:,0:500,:]
     A_tensor = A_tensor[:,0:500,:]
     L_tensor = L_tensor[:,0:10,:]
@@ -154,7 +162,7 @@ def main():
     print(model)
 
     #training iteration
-    for epoch in range(200):
+    for epoch in range(60):
         model.train()
         for batchidx, (V, A, L, label) in enumerate(daic_train):
             V, A, L, label = V.to(device), A.to(device), L.to(device), label.to(device)

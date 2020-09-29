@@ -12,7 +12,7 @@ def main():
     print("start running")
     daic_train, daic_test = prepare_sample()
              
-    batchsz = 1
+    batchsz = 1 # batch size must be 1 for the following codes to run correctly
     
     daic_test = DataLoader(daic_test, batch_size=1, shuffle=True, drop_last=True)
 
@@ -41,7 +41,7 @@ def main():
             logits = torch.squeeze(logits)
                 
             pred = sm(logits)
-            print("pred: ", pred, " label: ", label)
+            #print("pred: ", pred, " label: ", label)
                 
             total_correct += torch.le(torch.abs(pred-label), 0.5).float().sum().item()
             total_num += x1.size(0)
